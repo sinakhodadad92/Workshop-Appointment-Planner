@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from models.appointment import Appointment
 
 def display_menu():
@@ -22,21 +22,38 @@ def display_admin_menu():
     print("")
 
 def get_user_input(prompt, valid_options=None, validation_func=None):
+    """
+    Continuously prompt the user for input until valid input is provided.
+
+    Args:
+        prompt (str): The message to display when asking for input.
+        valid_options (list, optional): A list of valid options. If provided, input must match one of these options.
+        validation_func (function, optional): A function to validate the input. Should raise ValueError if validation fails.
+
+    Returns:
+        str: The valid input provided by the user.
+    """
     while True:
+        # Ask the user for input
         user_input = input(prompt).strip()
         
+        # If valid options are provided, check if the input is among them
         if valid_options and user_input not in valid_options:
             print(f"Invalid input. Please choose from {valid_options}.")
             continue
         
+        # If a validation function is provided, use it to validate the input
         if validation_func:
             try:
                 validation_func(user_input)
             except ValueError as e:
+                # If validation fails, inform the user and prompt again
                 print(f"Invalid input: {e}")
                 continue
 
+        # If input passes all checks, return it
         return user_input
+
 
 def validate_date(date_str):
     """Validate the date format YYYY-MM-DD and ensure it is after today."""
@@ -92,14 +109,33 @@ def create_appointment(scheduler, email, is_edit=False):
 
 
 def calculate_average_appointments(start_date_str: str, end_date_str: str, appointments: list) -> float:
-    """Calculate the average number of appointments per day over a given period."""
+    """
+    Calculate the average number of appointments per day over a given period.
+
+    Args:
+        start_date_str (str): The start date of the period (format: YYYY-MM-DD).
+        end_date_str (str): The end date of the period (format: YYYY-MM-DD).
+        appointments (list): A list of Appointment objects to calculate the average from.
+
+    Returns:
+        float: The average number of appointments per day during the specified period.
+
+    Raises:
+        ValueError: If the start date is after the end date.
+    """
+    # Convert the start and end date strings to date objects
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
+    
+    # Ensure the start date is not after the end date
     if start_date > end_date:
         raise ValueError("The start date must be before or the same as the end date.")
     
+    # Calculate the total number of days in the period
     num_days = (end_date - start_date).days + 1
+    
+    # Count the number of appointments that fall within the date range
     num_appointments = sum(1 for appt in appointments if start_date <= appt.appointment_date <= end_date)
     
+    # Calculate and return the average number of appointments per day
     return num_appointments / num_days if num_days > 0 else 0.0

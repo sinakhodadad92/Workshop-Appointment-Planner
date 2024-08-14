@@ -89,12 +89,20 @@ class Scheduler:
     
     def remove_appointment(self, email: str) -> bool:
         """Remove an appointment by the user's email."""
+        found = False  # Flag to check if an appointment was found and removed
+        
+        # Iterate over the appointments list to find and remove the matching appointment
         for i, appointment in enumerate(self.appointments):
             if appointment.email == email:
                 del self.appointments[i]
-                self.file_handler.save_appointments(self.appointments)  # Save after removing
-                return True
-        return False
+                found = True
+                break  # Exit the loop once the appointment is found and removed
+
+        if found:
+            self.file_handler.save_appointments(self.appointments)  # Save after removing
+            return True
+        else:
+            return False  # Return False if no appointment was found with the given email
     
 
     def list_appointments(self, date: str) -> list:
@@ -103,34 +111,67 @@ class Scheduler:
         return [appointment for appointment in self.appointments if appointment.appointment_date == date_obj]
 
     def list_free_slots(self, date: str) -> list:
-        """List all available time slots for a specific day."""
+        """
+        List all available time slots for a specific day.
+
+        Args:
+            date (str): The date for which to check the available time slots (format: YYYY-MM-DD).
+
+        Returns:
+            list: A list of strings, where each string represents a free time slot (e.g., "08:00 - 10:00").
+        """
+        # Convert the provided date string to a date object
         date_obj = Appointment._validate_date(None, date)
+        
+        # Initialize a list to hold the free time slots
         free_slots = []
 
+        # Check each time slot to see if it is free
         for slot_start, slot_end in self.time_slots:
+            # Find any appointments that fall within the current time slot
             slot_appointments = [
                 appt for appt in self.appointments 
                 if appt.appointment_date == date_obj and slot_start <= appt.appointment_time.strftime("%H:%M") < slot_end
             ]
+            # If no appointments are found, the slot is free
             if not slot_appointments:
                 free_slots.append(f"{slot_start} - {slot_end}")
 
         return free_slots
+
     
     def list_all_slots_with_status(self, date: str) -> list:
-        """List all time slots for a specific day, marking them as 'free' or 'booked'."""
+        """
+        List all time slots for a specific day, indicating whether each slot is 'free' or 'booked'.
+
+        Args:
+            date (str): The date for which to check the time slots (format: YYYY-MM-DD).
+
+        Returns:
+            list: A list of tuples, where each tuple contains the time slot (e.g., "08:00 - 10:00") 
+                and its status ('free' or 'booked').
+        """
+        # Convert the provided date string to a date object
         date_obj = Appointment._validate_date(None, date)
+        
+        # Initialize a list to hold the status of all time slots
         all_slots_with_status = []
 
+        # Check each time slot for availability
         for slot_start, slot_end in self.time_slots:
-            slot_status = 'free'
+            slot_status = 'free'  # Assume the slot is free by default
+
+            # Check if the current slot is booked
             for appt in self.appointments:
                 if appt.appointment_date == date_obj and appt.appointment_time.strftime("%H:%M") == slot_start:
-                    slot_status = 'booked'
+                    slot_status = 'booked'  # Mark the slot as booked
                     break
+            
+            # Add the slot and its status to the list
             all_slots_with_status.append((f"{slot_start} - {slot_end}", slot_status))
 
         return all_slots_with_status
+
     
     def shift_appointment(self, date: str, current_slot: str) -> str:
         """
@@ -138,53 +179,66 @@ class Scheduler:
         If no slots are available later on the same day, shift to the first available slot on subsequent days.
 
         Returns:
-            A string representing the new appointment time and date (e.g., "09:00 on 2023-08-15") if successful,
+            A string representing the new appointment time and date (e.g., "09:00 on 2024-08-15") if successful,
             or None if shifting failed.
         """
+        # Convert the provided date and time strings into date and time objects
         appointment_date = datetime.strptime(date, "%Y-%m-%d").date()
-        current_start_time_str = current_slot.split(" - ")[0]
-        current_start_time = datetime.strptime(current_start_time_str, "%H:%M").time()
+        current_time_str = current_slot.split(" - ")[0]
+        current_time = datetime.strptime(current_time_str, "%H:%M").time()
 
+        # Find the appointment that needs to be shifted
         for appointment in self.appointments:
-            if appointment.appointment_date == appointment_date and appointment.appointment_time == current_start_time:
+            if appointment.appointment_date == appointment_date and appointment.appointment_time == current_time:
                 
-                # Check for the next available slot on the same day
+                # Try to find an available slot later on the same day
                 for slot_start_str, _ in self.time_slots:
                     slot_start_time = datetime.strptime(slot_start_str, "%H:%M").time()
-                    if slot_start_time > current_start_time:
-                        # Check if the slot is free
-                        slot_is_free = True
-                        for a in self.appointments:
-                            if a.appointment_date == appointment_date and a.appointment_time == slot_start_time:
-                                slot_is_free = False
+
+                    # Look for a slot later than the current appointment time
+                    if slot_start_time > current_time:
+                        # Check if this slot is free
+                        is_slot_free = True
+                        for existing_appointment in self.appointments:
+                            print(f'this is existing appointment: {existing_appointment.appointment_date}')
+                            print(f'this is existing slot_start_time: {existing_appointment.appoint_time}')
+                            print(f'This is slot_start_time: {slot_start_time}')
+                            print(f'')
+                            if existing_appointment.appointment_date == appointment_date and existing_appointment.appointment_time == slot_start_time:
+                                is_slot_free = False
                                 break
                         
-                        if slot_is_free:
+                        # If the slot is free, update the appointment to this new time
+                        if is_slot_free:
                             appointment.appointment_time = slot_start_time
                             self.file_handler.save_appointments(self.appointments)
                             return f"{slot_start_str} on {appointment_date.strftime('%Y-%m-%d')}"
                 
-                # If no slots are available on the same day, check the subsequent days
-                next_day = appointment_date + timedelta(days=1)
+                # If no slots are available on the same day, check subsequent days
+                next_available_date = appointment_date + timedelta(days=1)
                 while True:
-                    day_found = False  # Flag to indicate if a free slot has been found
                     for slot_start_str, _ in self.time_slots:
                         slot_start_time = datetime.strptime(slot_start_str, "%H:%M").time()
 
-                        # Check if the slot is free
-                        slot_is_free = True
-                        for a in self.appointments:
-                            if a.appointment_date == next_day and a.appointment_time == slot_start_time:
-                                slot_is_free = False
+                        # Check if this slot is free on the next day
+                        is_slot_free = True
+                        for existing_appointment in self.appointments:
+                            if existing_appointment.appointment_date == next_available_date and existing_appointment.appointment_time == slot_start_time:
+                                is_slot_free = False
                                 break
                         
-                        if slot_is_free:
-                            appointment.appointment_date = next_day
+                        # If a free slot is found, move the appointment to this new date and time
+                        if is_slot_free:
+                            appointment.appointment_date = next_available_date
                             appointment.appointment_time = slot_start_time
                             self.file_handler.save_appointments(self.appointments)
-                            return f"{slot_start_str} on {next_day.strftime('%Y-%m-%d')}"
+                            return f"{slot_start_str} on {next_available_date.strftime('%Y-%m-%d')}"
                     
-                    # Move to the following day
-                    next_day += timedelta(days=1)
+                    # Move to the following day if no free slots are found on the current day
+                    next_available_date += timedelta(days=1)
+
+        # If no appointment was found or no slots were available, return None
+        return None
+
 
 

@@ -15,9 +15,15 @@ class Appointment:
     def _validate_date(self, date_str: str) -> datetime.date:
         """Validate and convert the date string to a date object."""
         try:
-            return datetime.strptime(date_str, "%Y-%m-%d").date()
+            entered_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
-            raise ValueError("Invalid date format. Please use YYYY-MM-DD.")
+            raise ValueError("Invalid date format")
+
+        today = datetime.now().date()
+        if entered_date <= today:
+            raise ValueError("The date must be from tomorrow onwards.")
+    
+        return entered_date
 
     def _validate_time(self, time_str: str) -> datetime.time:
         """Validate and convert the time string to a time object."""

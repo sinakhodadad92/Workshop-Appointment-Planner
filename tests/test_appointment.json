@@ -1,0 +1,42 @@
+[
+    {
+        "customer_name": "John Doe",
+        "vehicle_type": "Sedan",
+        "appointment_date": "2024-09-30",
+        "appointment_time": "10:00",
+        "maintenance_type": "Oil Change",
+        "appointment_id": "11111111-1111-1111-1111-111111111111",
+        "is_emergency": false,
+        "email": "john.doe@example.com"
+    },
+    {
+        "customer_name": "Jane Smith",
+        "vehicle_type": "SUV",
+        "appointment_date": "2024-10-01",
+        "appointment_time": "08:00",
+        "maintenance_type": "Tire Rotation",
+        "appointment_id": "22222222-2222-2222-2222-222222222222",
+        "is_emergency": false,
+        "email": "jane.smith@example.com"
+    },
+    {
+        "customer_name": "Bob Johnson",
+        "vehicle_type": "Truck",
+        "appointment_date": "2024-10-01",
+        "appointment_time": "13:00",
+        "maintenance_type": "Brake Inspection",
+        "appointment_id": "33333333-3333-3333-3333-333333333333",
+        "is_emergency": true,
+        "email": "bob.johnson@example.com"
+    },
+    {
+        "customer_name": "Alice Brown",
+        "vehicle_type": "Convertible",
+        "appointment_date": "2024-10-02",
+        "appointment_time": "15:00",
+        "maintenance_type": "Battery Check",
+        "appointment_id": "44444444-4444-4444-4444-444444444444",
+        "is_emergency": false,
+        "email": "alice.brown@example.com"
+    }
+]

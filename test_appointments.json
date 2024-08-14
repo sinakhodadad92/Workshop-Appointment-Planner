@@ -1,0 +1,22 @@
+[
+    {
+        "customer_name": "Jane Doe",
+        "vehicle_type": "SUV",
+        "appointment_date": "2024-09-30",
+        "appointment_time": "08:00",
+        "maintenance_type": "Brake Check",
+        "appointment_id": "f21907dd-1e84-4e1c-a3a2-613b9027b996",
+        "is_emergency": false,
+        "email": null
+    },
+    {
+        "customer_name": "John Doe",
+        "vehicle_type": "Sedan",
+        "appointment_date": "2024-09-30",
+        "appointment_time": "10:00",
+        "maintenance_type": "Oil Change",
+        "appointment_id": "ed7536f9-8c01-491c-8d73-06665e2878f0",
+        "is_emergency": false,
+        "email": null
+    }
+]
