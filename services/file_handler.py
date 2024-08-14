@@ -63,8 +63,7 @@ class FileHandler:
         Convert an Appointment object to a dictionary.
 
         Returns:
-            list: A dict of appointment details.
-        
+            dict: A dictionary of appointment details.
         """
         return {
             'customer_name': appointment.customer_name,
@@ -72,7 +71,9 @@ class FileHandler:
             'appointment_date': appointment.appointment_date.strftime('%Y-%m-%d'),
             'appointment_time': appointment.appointment_time.strftime('%H:%M'),
             'maintenance_type': appointment.maintenance_type,
-            'appointment_id': appointment.appointment_id
+            'appointment_id': appointment.appointment_id,
+            'is_emergency': appointment.is_emergency,
+            'email': appointment.email  
         }
 
     def _dict_to_appointment(self, data: dict) -> Appointment:
@@ -82,7 +83,9 @@ class FileHandler:
             vehicle_type=data['vehicle_type'],
             appointment_date=data['appointment_date'],
             appointment_time=data['appointment_time'],
-            maintenance_type=data['maintenance_type']
+            maintenance_type=data['maintenance_type'],
+            is_emergency=data.get('is_emergency', False),
+            email=data.get('email')  
         )
         appointment.appointment_id = data['appointment_id']  
         return appointment

@@ -33,6 +33,8 @@
 18. **Test Calculating Average Appointments per Day with Data**
 19. **Test Calculating Average Appointments per Day with No Appointments**
 20. **Test Handling of Emergency Appointments in Multiple Scenarios**
+21. **Test Valid Email Format During Appointment Creation**
+22. **Test Invalid Email Format During Appointment Creation**
 
 #### **FileHandler Class Tests**
 1. **Test Saving Appointments to JSON File**
@@ -50,3 +52,5 @@
 6. **Test User Interaction for Edge Cases (e.g., Invalid Inputs, Date Before Tomorrow)**
 7. **Test System Behavior After Removing the JSON File**
 8. **Test Sending Instant Confirmation Email and Reminders for Workflow**
+9. **Test User Interaction for Email Validation (Valid and Invalid Formats)**
+

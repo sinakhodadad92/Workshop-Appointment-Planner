@@ -27,4 +27,4 @@ def test_appointment_creation_with_valid_data():
     assert appointment.appointment_time.strftime('%H:%M') == appointment_time
     assert appointment.maintenance_type == maintenance_type
     assert appointment.email == email
-    assert appointment.appointment_id is not None
+    assert appointment.appointment_id is not None  
