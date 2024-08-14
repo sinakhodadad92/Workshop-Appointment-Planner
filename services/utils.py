@@ -8,7 +8,17 @@ def display_menu():
     print("2. Edit Appointment")
     print("3. Delete Appointment")
     print("4. List Free Time Slots")
-    print("5. Exit")
+    print("5. Admin Panel")
+    print("6. Exit")
+    print("")
+
+def display_admin_menu():
+    """Display the admin panel menu."""
+    print("\nAdmin Panel")
+    print("1. Display all appointments (by day or week)")
+    print("2. Display free time slots")
+    print("3. Calculate average number of appointments per day")
+    print("4. Back to main menu")
     print("")
 
 def get_user_input(prompt, valid_options=None, validation_func=None):
@@ -79,3 +89,17 @@ def create_appointment(scheduler, email, is_edit=False):
             print("Failed to process appointment. The time slot may be unavailable.")
     else:
         print("No available time slots for this date. Please try a different date.")
+
+
+def calculate_average_appointments(start_date_str: str, end_date_str: str, appointments: list) -> float:
+    """Calculate the average number of appointments per day over a given period."""
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+    if start_date > end_date:
+        raise ValueError("The start date must be before or the same as the end date.")
+    
+    num_days = (end_date - start_date).days + 1
+    num_appointments = sum(1 for appt in appointments if start_date <= appt.appointment_date <= end_date)
+    
+    return num_appointments / num_days if num_days > 0 else 0.0

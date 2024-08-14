@@ -1,13 +1,16 @@
 from models.appointment import Appointment
 from services.scheduler import Scheduler
-from services.utils import display_menu, get_user_input, validate_date, validate_email
+from services.utils import display_admin_menu, display_menu, get_user_input, validate_date, validate_email, calculate_average_appointments
+from datetime import datetime, timedelta
+
+ADMIN_PASSWORD = "adminpassword"
 
 def main():
     scheduler = Scheduler("appointments.json")
 
     while True:
         display_menu()
-        choice = get_user_input("Choose an option (1-5): ", valid_options=[str(i) for i in range(1, 6)])
+        choice = get_user_input("Choose an option (1-6): ", valid_options=[str(i) for i in range(1, 7)])
 
         if choice == "1":
             # Add Appointment logic
@@ -40,18 +43,15 @@ def main():
         elif choice == "2":  # Edit Appointment
             email = get_user_input("Enter the email associated with the appointment to edit: ", validation_func=validate_email)
 
-            # Fetch appointments for this email
             user_appointments = [appt for appt in scheduler.appointments if appt.email == email]
 
             if not user_appointments:
                 print("No appointments found for this email.")
             else:
-                # List all appointments for this email
                 print("Here are the appointments associated with this email:")
                 for i, appointment in enumerate(user_appointments, 1):
                     print(f"{i}. {appointment}")
 
-                # Ask the user which appointment they want to edit
                 appointment_choice = int(get_user_input(f"Enter the number of the appointment you want to edit (1-{len(user_appointments)}): ", valid_options=[str(i) for i in range(1, len(user_appointments) + 1)]))
 
                 selected_appointment = user_appointments[appointment_choice - 1]
@@ -60,7 +60,6 @@ def main():
                 confirm_edit = get_user_input("Do you want to edit this appointment? (yes/no): ", valid_options=["yes", "no"])
 
                 if confirm_edit == "yes":
-                    # Get new details
                     new_date = get_user_input("Enter new appointment date (YYYY-MM-DD): ", validation_func=validate_date)
                     free_slots = scheduler.list_free_slots(new_date)
                     
@@ -74,7 +73,6 @@ def main():
                         
                         new_maintenance_type = get_user_input("Enter new type of maintenance: ")
 
-                        # Edit the appointment in place
                         if scheduler.edit_appointment_in_place(selected_appointment, new_date, new_time, new_maintenance_type):
                             print("Appointment updated successfully.")
                         else:
@@ -87,23 +85,19 @@ def main():
         elif choice == "3":  # Delete Appointment
             email = get_user_input("Enter the email associated with the appointment to delete: ", validation_func=validate_email)
 
-            # Fetch appointments for this email
             user_appointments = [appt for appt in scheduler.appointments if appt.email == email]
 
             if not user_appointments:
                 print("No appointments found for this email.")
             else:
-                # List all appointments for this email
                 print("Here are the appointments associated with this email:")
                 for i, appointment in enumerate(user_appointments, 1):
                     print(f"{i}. {appointment}")
 
-                # Ask the user which appointment they want to delete
                 appointment_choice = int(get_user_input(f"Enter the number of the appointment you want to delete (1-{len(user_appointments)}): ", valid_options=[str(i) for i in range(1, len(user_appointments) + 1)]))
 
                 selected_appointment = user_appointments[appointment_choice - 1]
 
-                # Confirm deletion
                 confirm_delete = get_user_input(f"Are you sure you want to delete the appointment: {selected_appointment}? (yes/no): ", valid_options=["yes", "no"])
 
                 if confirm_delete == "yes":
@@ -124,7 +118,57 @@ def main():
             else:
                 print("No free time slots available.")
 
-        elif choice == "5":
+        elif choice == "5":  # Admin Panel
+            admin_password = get_user_input("Enter admin password: ")
+            if admin_password == ADMIN_PASSWORD:
+                while True:
+                    display_admin_menu()
+                    admin_choice = get_user_input("Choose an option (1-4): ", valid_options=["1", "2", "3", "4"])
+
+                    if admin_choice == "1":  # Display all appointments
+                        date_or_week = get_user_input("Enter 'day' or 'week' to view appointments: ", valid_options=["day", "week"])
+                        if date_or_week == "day":
+                            date = get_user_input("Enter date (YYYY-MM-DD) to view appointments: ", validation_func=validate_date)
+                            appointments = scheduler.list_appointments(date)
+                        else:
+                            start_date = get_user_input("Enter start date (YYYY-MM-DD) of the week: ", validation_func=validate_date)
+                            appointments = []
+                            for i in range(7):
+                                day = datetime.strptime(start_date, "%Y-%m-%d").date() + timedelta(days=i)
+                                appointments.extend(scheduler.list_appointments(day.strftime("%Y-%m-%d")))
+                        
+                        if appointments:
+                            for appt in appointments:
+                                print(appt)
+                        else:
+                            print("No appointments found.")
+
+                    elif admin_choice == "2":  # Display free time slots
+                        date = get_user_input("Enter date (YYYY-MM-DD) to view free slots: ", validation_func=validate_date)
+                        free_slots = scheduler.list_free_slots(date)
+                        if free_slots:
+                            print("Available time slots:")
+                            for slot in free_slots:
+                                print(slot)
+                        else:
+                            print("No free time slots available.")
+
+                    elif admin_choice == "3":  # Calculate average number of appointments per day
+                        start_date = get_user_input("Enter the start date (YYYY-MM-DD): ", validation_func=validate_date)
+                        end_date = get_user_input("Enter the end date (YYYY-MM-DD): ", validation_func=validate_date)
+                        
+                        try:
+                            average = calculate_average_appointments(start_date, end_date, scheduler.appointments)
+                            print(f"Average number of appointments per day from {start_date} to {end_date}: {average:.2f}")
+                        except ValueError as e:
+                            print(f"Error: {e}")
+                    
+                    elif admin_choice == "4":  # Back to main menu
+                        break
+            else:
+                print("Incorrect admin password. Access denied.")
+
+        elif choice == "6":
             print("Exiting the program.")
             break
 

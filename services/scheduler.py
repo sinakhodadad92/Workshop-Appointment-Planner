@@ -109,10 +109,10 @@ class Scheduler:
 
 
 
-    # def list_appointments(self, date: str) -> list:
-    #     """List all appointments for a specific day."""
-    #     date_obj = Appointment._validate_date(None, date)
-    #     return [appointment for appointment in self.appointments if appointment.appointment_date == date_obj]
+    def list_appointments(self, date: str) -> list:
+        """List all appointments for a specific day."""
+        date_obj = Appointment._validate_date(None, date)
+        return [appointment for appointment in self.appointments if appointment.appointment_date == date_obj]
 
     def list_free_slots(self, date: str) -> list:
         """List all available time slots for a specific day."""
