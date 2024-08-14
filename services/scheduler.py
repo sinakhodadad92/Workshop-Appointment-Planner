@@ -29,15 +29,24 @@ class Scheduler:
         return False
     
     def check_availability(self, new_appointment: Appointment) -> bool:
-        """Check if the time slot for the new appointment is already booked."""
-        new_appointment_time_str = new_appointment.appointment_time.strftime("%H:%M")
-        
+        """Check if the time slot for the new appointment is already booked, excluding the current appointment being edited."""
         for appointment in self.appointments:
-            appointment_time_str = appointment.appointment_time.strftime("%H:%M")
             if (appointment.appointment_date == new_appointment.appointment_date and
-                appointment_time_str == new_appointment_time_str):
+                appointment.appointment_time == new_appointment.appointment_time and
+                appointment.appointment_id != new_appointment.appointment_id):  
                 return True  
         return False  
+    
+    # def check_availability(self, new_appointment: Appointment) -> bool:
+    #     """Check if the time slot for the new appointment is already booked."""
+    #     new_appointment_time_str = new_appointment.appointment_time.strftime("%H:%M")
+        
+    #     for appointment in self.appointments:
+    #         appointment_time_str = appointment.appointment_time.strftime("%H:%M")
+    #         if (appointment.appointment_date == new_appointment.appointment_date and
+    #             appointment_time_str == new_appointment_time_str):
+    #             return True  
+    #     return False  
 
     def add_appointment(self, appointment: Appointment) -> bool:
         """Add an appointment if the time slot is available and within working hours."""
@@ -57,23 +66,36 @@ class Scheduler:
 
             return True
         return False
+    
+    def edit_appointment_in_place(self, appointment: Appointment, new_date: str, new_time: str, new_maintenance_type: str):
+        """Edit an existing appointment in place."""
+        # Validate and update the date and time
+        appointment.appointment_date = appointment._validate_date(new_date)
+        appointment.appointment_time = appointment._validate_time(new_time)
+        appointment.maintenance_type = new_maintenance_type
 
-    def edit_appointment(self, email: str, new_date: str, new_time: str, new_maintenance_type: str) -> bool:
-        """Edit an existing appointment by searching with the user's email and updating the date, time, and maintenance type."""
-        for appointment in self.appointments:
-            if appointment.email == email:
-                # Update the appointment date, time, and maintenance type
-                appointment.appointment_date = appointment._validate_date(new_date)
-                appointment.appointment_time = appointment._validate_time(new_time)
-                appointment.maintenance_type = new_maintenance_type
+        # Check availability for the new date and time
+        if not self._is_within_opening_hours(appointment) or self.check_availability(appointment):
+            print("Failed to update appointment. The time slot may be unavailable.")
+            return False
+        
+        self.file_handler.save_appointments(self.appointments)  # Save after editing
+        return True
 
-                # Re-check availability if the time was changed
-                if not self._is_within_opening_hours(appointment) or self.check_availability(appointment):
-                    return False
-                
-                self.file_handler.save_appointments(self.appointments)  
-                return True
-        return False
+    # def edit_appointment_in_place(self, appointment: Appointment, new_date: str, new_time: str, new_maintenance_type: str):
+    #     """Edit an existing appointment in place."""
+    #     # Validate and update the date and time
+    #     appointment.appointment_date = appointment._validate_date(new_date)
+    #     appointment.appointment_time = appointment._validate_time(new_time)
+    #     appointment.maintenance_type = new_maintenance_type
+
+    #     # Check availability for the new date and time
+    #     if not self._is_within_opening_hours(appointment) or self.check_availability(appointment):
+    #         print("Failed to update appointment. The time slot may be unavailable.")
+    #         return False
+        
+    #     self.file_handler.save_appointments(self.appointments)  # Save after editing
+    #     return True
     
     def remove_appointment(self, email: str) -> bool:
         """Remove an appointment by the user's email."""
@@ -84,7 +106,7 @@ class Scheduler:
                 return True
         return False
     
-    
+
 
 
     # def list_appointments(self, date: str) -> list:

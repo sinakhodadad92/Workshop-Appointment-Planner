@@ -1,21 +1,11 @@
 [
     {
-        "customer_name": "Sina2",
-        "vehicle_type": "BMW",
+        "customer_name": "sina2",
+        "vehicle_type": "BMW2",
         "appointment_date": "2024-08-16",
-        "appointment_time": "08:00",
+        "appointment_time": "10:00",
         "maintenance_type": "Oil2",
-        "appointment_id": "160eaf1b-7b09-42ae-965b-439d6c71eadc",
-        "is_emergency": true,
-        "email": "sinamd443@gmail.com"
-    },
-    {
-        "customer_name": "Sina2",
-        "vehicle_type": "Benz2",
-        "appointment_date": "2024-08-16",
-        "appointment_time": "13:00",
-        "maintenance_type": "Oil2",
-        "appointment_id": "c616c392-ee1e-4471-b075-080b186463f2",
+        "appointment_id": "654dec22-b34f-4d6e-bfdd-e65cdfd5be57",
         "is_emergency": true,
         "email": "sinamd443@gmail.com"
     }
