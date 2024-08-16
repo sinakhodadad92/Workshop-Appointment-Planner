@@ -3,3 +3,4 @@ __pycache__
 env
 sent_email.py
 .env
+.vscode/

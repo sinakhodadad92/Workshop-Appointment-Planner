@@ -1,6 +1,12 @@
 from datetime import datetime, timedelta
 from services.file_handler import FileHandler
 from models.appointment import Appointment
+import smtplib
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
 
 class Scheduler:
     def __init__(self, file_path: str, opening_hours=("08:00", "17:00"), lunch_break=("12:00", "13:00")):
@@ -171,6 +177,52 @@ class Scheduler:
             all_slots_with_status.append((f"{slot_start} - {slot_end}", slot_status))
 
         return all_slots_with_status
+    
+    def list_emails_for_date(self, date: str) -> list:
+        """
+        List all emails associated with appointments for a specific date.
+
+        Args:
+            date (str): The date for which to list emails (format: YYYY-MM-DD).
+
+        Returns:
+            list: A list of tuples containing the email and appointment details.
+        """
+        date_obj = Appointment._validate_date(None, date)
+        emails = [(appt.email, appt) for appt in self.appointments if appt.appointment_date == date_obj and appt.email]
+        return emails
+
+    
+    def send_reminder_email(self, appointment: Appointment):
+        """
+        Send a reminder email for an appointment using the pre-configured sender email.
+
+        Args:
+            appointment (Appointment): The appointment for which to send a reminder.
+        """
+        sender_email = "sinamd443@gmail.com"
+        receiver_email = appointment.email
+        subject = "Appointment Reminder"
+        message = (f"Dear {appointment.customer_name},\n\n"
+                f"This is a reminder for your upcoming appointment on {appointment.appointment_date} at {appointment.appointment_time}.\n\n"
+                "Best regards,\nAutoSchmiede")
+
+        # Prepare the email text
+        email_text = f"Subject: {subject}\n\n{message}"
+
+        # Get the password from the environment variable
+        email_password = os.getenv("EMAIL_PASSWORD")
+
+
+        try:
+            # Set up the SMTP server connection
+            server = smtplib.SMTP("smtp.gmail.com", 587)
+            server.starttls()
+            server.login(sender_email, email_password)  
+            server.sendmail(sender_email, receiver_email, email_text)
+            print(f"Reminder sent to {receiver_email}.")
+        except Exception as e:
+            print(f"Failed to send email to {receiver_email}: {e}")
 
     
     def shift_appointment(self, date: str, current_slot: str) -> str:
@@ -179,66 +231,54 @@ class Scheduler:
         If no slots are available later on the same day, shift to the first available slot on subsequent days.
 
         Returns:
-            A string representing the new appointment time and date (e.g., "09:00 on 2024-08-15") if successful,
+            A string representing the new appointment time and date (e.g., "09:00 on 2023-08-15") if successful,
             or None if shifting failed.
         """
-        # Convert the provided date and time strings into date and time objects
+        # Parse the provided date and time
         appointment_date = datetime.strptime(date, "%Y-%m-%d").date()
-        current_time_str = current_slot.split(" - ")[0]
-        current_time = datetime.strptime(current_time_str, "%H:%M").time()
+        current_start_time_str = current_slot.split(" - ")[0]
+        current_start_time = datetime.strptime(current_start_time_str, "%H:%M").time()
 
-        # Find the appointment that needs to be shifted
+        # Identify the appointment to be shifted
         for appointment in self.appointments:
-            if appointment.appointment_date == appointment_date and appointment.appointment_time == current_time:
+            if (appointment.appointment_date == appointment_date and
+                appointment.appointment_time == current_start_time):
                 
-                # Try to find an available slot later on the same day
+                # First, attempt to find a later slot on the same day
                 for slot_start_str, _ in self.time_slots:
                     slot_start_time = datetime.strptime(slot_start_str, "%H:%M").time()
-
-                    # Look for a slot later than the current appointment time
-                    if slot_start_time > current_time:
+                    
+                    if slot_start_time > current_start_time:
                         # Check if this slot is free
-                        is_slot_free = True
-                        for existing_appointment in self.appointments:
-                            print(f'this is existing appointment: {existing_appointment.appointment_date}')
-                            print(f'this is existing slot_start_time: {existing_appointment.appoint_time}')
-                            print(f'This is slot_start_time: {slot_start_time}')
-                            print(f'')
-                            if existing_appointment.appointment_date == appointment_date and existing_appointment.appointment_time == slot_start_time:
-                                is_slot_free = False
-                                break
-                        
-                        # If the slot is free, update the appointment to this new time
-                        if is_slot_free:
+                        if not any(a.appointment_date == appointment_date and a.appointment_time == slot_start_time
+                                for a in self.appointments):
+                            # Update the appointment to the new time
                             appointment.appointment_time = slot_start_time
                             self.file_handler.save_appointments(self.appointments)
                             return f"{slot_start_str} on {appointment_date.strftime('%Y-%m-%d')}"
                 
-                # If no slots are available on the same day, check subsequent days
-                next_available_date = appointment_date + timedelta(days=1)
+                # If no later slots are free on the same day, move to the next day
+                next_day = appointment_date + timedelta(days=1)
                 while True:
+                    # Check each slot on the next day
                     for slot_start_str, _ in self.time_slots:
                         slot_start_time = datetime.strptime(slot_start_str, "%H:%M").time()
-
-                        # Check if this slot is free on the next day
-                        is_slot_free = True
-                        for existing_appointment in self.appointments:
-                            if existing_appointment.appointment_date == next_available_date and existing_appointment.appointment_time == slot_start_time:
-                                is_slot_free = False
-                                break
                         
-                        # If a free slot is found, move the appointment to this new date and time
-                        if is_slot_free:
-                            appointment.appointment_date = next_available_date
+                        if not any(a.appointment_date == next_day and a.appointment_time == slot_start_time
+                                for a in self.appointments):
+                            # Update the appointment to the new date and time
+                            appointment.appointment_date = next_day
                             appointment.appointment_time = slot_start_time
                             self.file_handler.save_appointments(self.appointments)
-                            return f"{slot_start_str} on {next_available_date.strftime('%Y-%m-%d')}"
+                            return f"{slot_start_str} on {next_day.strftime('%Y-%m-%d')}"
                     
-                    # Move to the following day if no free slots are found on the current day
-                    next_available_date += timedelta(days=1)
-
-        # If no appointment was found or no slots were available, return None
+                    # Move to the next day
+                    next_day += timedelta(days=1)
+        
+        # If the appointment to be shifted was not found or no slots are available
         return None
+    
+
 
 
 
